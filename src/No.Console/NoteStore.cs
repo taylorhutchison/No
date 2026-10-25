@@ -15,7 +15,13 @@ internal sealed class NoteStore
         }
 
         using var stream = File.OpenRead(FilePath);
-        return JsonSerializer.Deserialize(stream, NoteJsonContext.Default.ListNote) ?? [];
+        var file = JsonSerializer.Deserialize(stream, NoteJsonContext.Default.NoteFile) ?? new NoteFile();
+        foreach (var note in file.Archive)
+        {
+            note.Archived = true;
+        }
+
+        return [.. file.Notes, .. file.Archive];
     }
 
     public void Save(List<Note> notes)
@@ -26,7 +32,12 @@ internal sealed class NoteStore
         var temp = FilePath + ".tmp";
         using (var stream = File.Create(temp))
         {
-            JsonSerializer.Serialize(stream, notes, NoteJsonContext.Default.ListNote);
+            var file = new NoteFile
+            {
+                Notes = [.. notes.Where(n => !n.Archived)],
+                Archive = [.. notes.Where(n => n.Archived)],
+            };
+            JsonSerializer.Serialize(stream, file, NoteJsonContext.Default.NoteFile);
         }
 
         File.Move(temp, FilePath, overwrite: true);

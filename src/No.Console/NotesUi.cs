@@ -192,13 +192,13 @@ internal sealed class NotesUi(NoteStore store)
         }
         else
         {
-            var table = new Table().Border(TableBorder.None).AddColumn("Title").AddColumn("Modified").AddColumn("Created");
+            var table = new Table().Border(TableBorder.None).AddColumn("Title").AddColumn("Modified");
             for (var i = top; i < Math.Min(visible.Count, top + rows); i++)
             {
                 var n = visible[i];
                 var title = n.Title.Length > 60 ? n.Title[..59] + "…" : n.Title;
                 string Cell(string text) => i == index ? $"[invert]{Markup.Escape(text)}[/]" : Markup.Escape(text);
-                table.AddRow(Cell(title), Cell(Format(n.Modified)), Cell(Format(n.Created)));
+                table.AddRow(Cell(title), Cell(Format(n.Modified)));
             }
 
             AnsiConsole.Write(table);

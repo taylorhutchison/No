@@ -9,9 +9,19 @@ public sealed class Note
     public string Body { get; set; } = "";
     public DateTimeOffset Created { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset Modified { get; set; } = DateTimeOffset.UtcNow;
+
+    // Derived from which list the note is stored under in the file.
+    [JsonIgnore]
     public bool Archived { get; set; }
 }
 
+public sealed class NoteFile
+{
+    public List<Note> Notes { get; set; } = [];
+
+    public List<Note> Archive { get; set; } = [];
+}
+
 [JsonSourceGenerationOptions(WriteIndented = true)]
-[JsonSerializable(typeof(List<Note>))]
+[JsonSerializable(typeof(NoteFile))]
 internal sealed partial class NoteJsonContext : JsonSerializerContext;
