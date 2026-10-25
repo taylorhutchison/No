@@ -42,9 +42,9 @@ internal static class Editor
                         return null;
                     }
 
-                    Draw(title, lines, top, left, view, width, row, col, "Save changes? (y = save, n = discard, any other key = keep editing)", dirty);
+                    Draw(title, lines, top, left, view, width, row, col, "Save changes? (q = save, n = discard, any other key = keep editing)", dirty);
                     var answer = Console.ReadKey(true).Key;
-                    if (answer == ConsoleKey.Y) return string.Join('\n', lines);
+                    if (answer == ConsoleKey.Q) return string.Join('\n', lines);
                     if (answer == ConsoleKey.N) return null;
                     break;
 
