@@ -17,11 +17,18 @@ public sealed class Note
 
 public sealed class NoteFile
 {
+    // Only meaningful in the home-directory file: where the notes actually live.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Path { get; set; }
+
     public List<Note> Notes { get; set; } = [];
 
     public List<Note> Archive { get; set; } = [];
 }
 
-[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSourceGenerationOptions(
+    WriteIndented = true,
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    PropertyNameCaseInsensitive = true)]
 [JsonSerializable(typeof(NoteFile))]
 internal sealed partial class NoteJsonContext : JsonSerializerContext;

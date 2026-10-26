@@ -5,6 +5,7 @@ namespace No;
 internal sealed class NotesUi(NoteStore store)
 {
     private readonly List<Note> _notes = store.Load();
+    private string _path = store.FilePath;
 
     public void Run()
     {
@@ -48,11 +49,19 @@ internal sealed class NotesUi(NoteStore store)
                         break;
                     case ConsoleKey.Escape:
                         return;
+                    case ConsoleKey.F5:
+                        Refresh();
+                        message = "Refreshed.";
+                        break;
                     default:
                         switch (char.ToLowerInvariant(key.KeyChar))
                         {
                             case 'q':
                                 return;
+                            case 'f':
+                                Refresh();
+                                message = "Refreshed.";
+                                break;
                             case 'n':
                                 var title = Ask("Title:");
                                 if (!string.IsNullOrWhiteSpace(title))
@@ -171,6 +180,14 @@ internal sealed class NotesUi(NoteStore store)
         }
     }
 
+    private void Refresh()
+    {
+        var latest = store.Load();
+        _notes.Clear();
+        _notes.AddRange(latest);
+        _path = store.FilePath;
+    }
+
     private List<Note> Visible(int tab) =>
         [.. _notes.Where(n => n.Archived == (tab == 1)).OrderByDescending(n => n.Modified)];
 
@@ -207,7 +224,8 @@ internal sealed class NotesUi(NoteStore store)
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine(message.Length > 0 ? Markup.Escape(message) : " ");
         var archiveKey = tab == 0 ? "archive" : "restore";
-        AnsiConsole.MarkupLine($"[grey]Up/Down move  Enter open  n new  a {archiveKey}  d delete  r rename  / search  Tab switch  q quit[/]");
+        AnsiConsole.MarkupLine($"[grey]Up/Down move  Enter open  n new  a {archiveKey}  d delete  r rename  / search  Tab switch  f refresh  q quit[/]");
+        AnsiConsole.MarkupLine($"[grey]{Markup.Escape(_path)}[/]");
     }
 
     private static string Format(DateTimeOffset value) => value.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
