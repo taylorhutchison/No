@@ -1,4 +1,13 @@
-﻿using No;
+﻿using System.Reflection;
+using No;
+
+if (args is ["--version" or "-v"])
+{
+    var version = Assembly.GetExecutingAssembly()
+        .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "unknown";
+    Console.WriteLine(version.Split('+')[0]);
+    return 0;
+}
 
 var searching = false;
 var all = false;
@@ -52,6 +61,6 @@ return term.Length == 0 ? Usage() : ui.RunSearch(term, all);
 
 static int Usage()
 {
-    Console.Error.WriteLine("Usage: no [--search <term> [--all]] | --set-path <file-or-folder> | --clear-path | --set-editor \"<command>\" | --clear-editor");
+    Console.Error.WriteLine("Usage: no [--search <term> [--all]] | --set-path <file-or-folder> | --clear-path | --set-editor \"<command>\" | --clear-editor | --version");
     return 2;
 }
