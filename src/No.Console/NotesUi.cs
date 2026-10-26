@@ -62,6 +62,9 @@ internal sealed class NotesUi(NoteStore store)
                                 Refresh();
                                 message = "Refreshed.";
                                 break;
+                            case 'e' when current is not null:
+                                message = OpenExternal(current);
+                                break;
                             case 'n':
                                 var title = Ask("Title:");
                                 if (!string.IsNullOrWhiteSpace(title))
@@ -180,6 +183,37 @@ internal sealed class NotesUi(NoteStore store)
         }
     }
 
+    private string OpenExternal(Note note)
+    {
+        // Terminal editors use the alternate screen themselves, so leave ours first.
+        var wasActive = _screenDepth > 0;
+        if (wasActive) Console.Write("\e[?1049l");
+        Console.CursorVisible = true;
+
+        try
+        {
+            var edited = ExternalEditor.Edit(note.Body, store.Editor);
+            if (edited is null || edited == note.Body)
+            {
+                return "No changes.";
+            }
+
+            note.Body = edited;
+            note.Modified = DateTimeOffset.UtcNow;
+            store.Save(_notes);
+            return "Saved.";
+        }
+        catch (Exception ex)
+        {
+            return $"External editor failed: {ex.Message}";
+        }
+        finally
+        {
+            if (wasActive) Console.Write("\e[?1049h");
+            Console.CursorVisible = false;
+        }
+    }
+
     private void Refresh()
     {
         var latest = store.Load();
@@ -224,7 +258,7 @@ internal sealed class NotesUi(NoteStore store)
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine(message.Length > 0 ? Markup.Escape(message) : " ");
         var archiveKey = tab == 0 ? "archive" : "restore";
-        AnsiConsole.MarkupLine($"[grey]Up/Down move  Enter open  n new  a {archiveKey}  d delete  r rename  / search  Tab switch  f refresh  q quit[/]");
+        AnsiConsole.MarkupLine($"[grey]Up/Down move  Enter open  e external  n new  a {archiveKey}  d delete  r rename  / search  Tab switch  f refresh  q quit[/]");
         AnsiConsole.MarkupLine($"[grey]{Markup.Escape(_path)}[/]");
     }
 

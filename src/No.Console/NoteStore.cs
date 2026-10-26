@@ -31,18 +31,33 @@ internal sealed class NoteStore
         }
         else
         {
-            Write(HomeFilePath, ToFile(notes));
+            var file = ToFile(notes);
+            file.Editor = home.Editor;
+            Write(HomeFilePath, file);
         }
+    }
+
+    /// <summary>The configured external editor command, if any.</summary>
+    public string? Editor => Read(HomeFilePath).Editor;
+
+    public void SetEditor(string? command)
+    {
+        var home = Read(HomeFilePath);
+        home.Editor = string.IsNullOrWhiteSpace(command) ? null : command.Trim();
+        Write(HomeFilePath, home);
     }
 
     /// <summary>Points the home file at a new location, or back at itself when null.</summary>
     public string SetPath(string? raw)
     {
         var notes = Load();
+        var editor = Read(HomeFilePath).Editor;
 
         if (raw is null)
         {
-            Write(HomeFilePath, ToFile(notes));
+            var local = ToFile(notes);
+            local.Editor = editor;
+            Write(HomeFilePath, local);
             return HomeFilePath;
         }
 
@@ -58,7 +73,7 @@ internal sealed class NoteStore
             Write(target, ToFile(merged));
         }
 
-        Write(HomeFilePath, new NoteFile { Path = target });
+        Write(HomeFilePath, new NoteFile { Path = target, Editor = editor });
         return target;
     }
 

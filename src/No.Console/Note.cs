@@ -21,6 +21,10 @@ public sealed class NoteFile
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Path { get; set; }
 
+    // Only meaningful in the home-directory file: command used by the external editor.
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Editor { get; set; }
+
     public List<Note> Notes { get; set; } = [];
 
     public List<Note> Archive { get; set; } = [];
