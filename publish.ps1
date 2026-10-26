@@ -1,0 +1,1 @@
+& dotnet publish src/No.Console -c Release -r win-x64 -o $env:USERPROFILE\.no\bin

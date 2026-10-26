@@ -1,0 +1,84 @@
+name: release
+
+on:
+  push:
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      is_new: ${{ steps.v.outputs.is_new }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - id: v
+        run: |
+          version=$(dotnet msbuild src/No.Console/No.Console.csproj -getProperty:Version)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null 2>&1; then
+            echo "is_new=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_new=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    needs: check
+    if: needs.check.outputs.is_new == 'true'
+    strategy:
+      matrix:
+        include:
+          - { os: windows-latest, rid: win-x64 }
+          - { os: ubuntu-latest, rid: linux-x64 }
+          - { os: macos-latest, rid: osx-arm64 }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - name: Publish
+        shell: bash
+        run: dotnet publish src/No.Console -c Release -r ${{ matrix.rid }} --self-contained true -o out
+      - name: Package
+        shell: bash
+        run: |
+          mkdir dist
+          if [ "${{ matrix.rid }}" = "win-x64" ]; then
+            7z a "dist/no-${{ matrix.rid }}.zip" ./out/no.exe
+          else
+            # tar keeps the executable bit, which artifacts would otherwise drop
+            tar -czf "dist/no-${{ matrix.rid }}.tar.gz" -C out no
+          fi
+      - uses: actions/upload-artifact@v7
+        with:
+          name: no-${{ matrix.rid }}
+          path: dist/*
+
+  release:
+    needs: [check, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${{ needs.check.outputs.version }}"
+          prerelease=""
+          if [[ "$version" == *-* ]]; then prerelease="--prerelease"; fi
+          gh release create "v$version" dist/* \
+            --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}" \
+            --title "v$version" \
+            --generate-notes \
+            $prerelease
